@@ -14,6 +14,6 @@ loop() ->
 	end.
 
 main() ->
-	{ok, Default} = file:consult("cars.dat"),
+	{ok, Default} = file:consult("../priv/cars.dat"),
 	createcars(Default),
 	loop().
