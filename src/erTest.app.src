@@ -1,4 +1,4 @@
-{application, application,
+{application, erTest,
  [
   {description, ""},
   {vsn, "1"},
@@ -7,6 +7,6 @@
                   kernel,
                   stdlib
                  ]},
-  {mod, { application_app, []}},
+  {mod, { erTest_app, []}},
   {env, []}
  ]}.

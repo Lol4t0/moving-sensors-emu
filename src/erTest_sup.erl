@@ -16,4 +16,5 @@ init([]) ->
 	{ok,{{one_for_one,5,10}, lists:map(fun view/1, Default)}}.
 
 view(I) ->
+	{{number, CarNumber}, _, _} = I,
 	{CarNumber, {erTest_car, start, [I]}, permanent, 2000, worker, [erTest_car]}.

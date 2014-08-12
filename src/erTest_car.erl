@@ -45,4 +45,3 @@ car(CarStatus) ->
 			io:format("Car ~p now at ~p~n", [CarNumber, NewPosition]),
 			car(CarStatus#status{position = NewPosition, current_route = NewRoute}) 
 	end.
-
