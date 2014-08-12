@@ -4,8 +4,7 @@
 start(I) ->
 	{_,{route,CarRoute},_} = I, 
 	[CarPosition|_] = CarRoute,
-	Pid = self(),
-	spawn (fun() -> car(Pid, I, CarPosition, CarRoute) end).
+	{ok, spawn (fun() -> car(I, CarPosition, CarRoute) end)}.
 
 distance(Point1, Point2) ->
 	{X1, Y1} = Point1,
@@ -30,13 +29,13 @@ nextpoint(I) ->
 			{newposition(CarPosition, NextPoint, CarSpeed), CurrentRoute}
 	end.
 
-car(Pid, I, CarPosition, CurrentRoute) ->
+car(I, CarPosition, CurrentRoute) ->
 	receive
 		after 1000 ->
 			{{number,CarNumber},{route,FullRoute},{speed, CarSpeed}} = I,
 			Info = {CarPosition, CurrentRoute, FullRoute, CarSpeed},
 			{NewPosition, NewRoute} = nextpoint(Info),
-			Pid ! {CarNumber, NewPosition},
-			car(Pid, I, NewPosition, NewRoute) 
+			io:format("Car ~p now at ~p~n", [CarNumber, CarPosition]),
+			car(I, NewPosition, NewRoute) 
 	end.
 
