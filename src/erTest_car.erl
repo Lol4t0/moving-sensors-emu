@@ -1,4 +1,4 @@
--module(car).
+-module(erTest_car).
 -export([start/1]).
 
 start(I) ->

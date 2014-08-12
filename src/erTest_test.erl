@@ -1,4 +1,4 @@
--module(test).
+-module(erTest_test).
 -export([main/0]).
 
 createcars([I|T]) ->
