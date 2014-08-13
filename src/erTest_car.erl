@@ -2,9 +2,11 @@
 
 -behaviour(gen_fsm).
 
--export([start_link/1]).
+-define(FREQ, 1000).
 
--export([init/1, moving/2, handle_event/3,
+-export([start_link/1, stop_car/1, start_car/1, car_position/1]).
+
+-export([init/1, moving/2, handle_event/3, stationary/2,
          handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
 
 -record(status, {
@@ -16,22 +18,48 @@
 	}).
 
 start_link(I) ->
-	gen_fsm:start_link(?MODULE, [I], []).
+	{{number, CarNumber}, _, _} = I,
+	gen_fsm:start_link({local, car_to_atom(CarNumber)}, ?MODULE, [I], []).
 
 init([I]) ->
 	{{number, CarNumber}, {route, CarRoute}, {speed, CarSpeed}} = I, 
 	[CarPosition|_] = CarRoute,
-	{ok, moving, #status{position = CarPosition, number = CarNumber, speed = CarSpeed, route = CarRoute, current_route = CarRoute}, 1000}.
+	{ok, stationary, #status{position = CarPosition, number = CarNumber, speed = CarSpeed, route = CarRoute, current_route = CarRoute}}.
+
+stop_car(CarNumber) ->
+	gen_fsm:send_event(car_to_atom(CarNumber), stop).
+start_car(CarNumber) ->
+	gen_fsm:send_event(car_to_atom(CarNumber), start).
+car_position(CarNumber) ->
+	gen_fsm:send_all_state_event(car_to_atom(CarNumber), position).
+
+stationary(start, CarStatus) ->
+	{next_state, moving, CarStatus, ?FREQ};
+stationary(_Event, CarStatus) ->
+	{next_state, stationary, CarStatus}.
 
 moving(timeout, CarStatus) -> 
-	#status{number = CarNumber} = CarStatus,
+	% #status{number = CarNumber} = CarStatus,
 	{NewPosition, NewRoute} = nextpoint(CarStatus),
-	io:format("Car ~p now at ~p~n", [CarNumber, NewPosition]),
-	{next_state, moving, CarStatus#status{position = NewPosition, current_route = NewRoute}, 1000}.
+	% io:format("Car ~p now at ~p~n", [CarNumber, NewPosition]),
+	{next_state, moving, CarStatus#status{position = NewPosition, current_route = NewRoute}, ?FREQ};
+moving(stop, CarStatus) ->
+	{next_state, stationary, CarStatus};
+moving(_Event, CarStatus) ->
+	{next_state, moving, CarStatus, ?FREQ}.
 
 
-handle_event(_Event, StateName, State) ->
-  {next_state, StateName, State}.
+handle_event(position, StateName, CarStatus) ->
+	#status{position = CarPosition, number = CarNumber} = CarStatus,
+	io:format("Car ~p now at ~p and it is ~p~n", [CarNumber, CarPosition, StateName]),
+	if 
+		StateName == moving ->
+			{next_state, moving, CarStatus, ?FREQ};
+		StateName == stationary ->
+			{next_state, stationary, CarStatus}
+	end;
+handle_event(_Event, StateName, CarStatus) ->
+	{next_state, StateName, CarStatus}.
 
 handle_sync_event(_Event, _From, StateName, State) ->
   Reply = {error, invalid_message},
@@ -69,3 +97,6 @@ nextpoint(#status{position = CarPosition, current_route = CurrentRoute, speed = 
 		L > CarSpeed ->
 			{newposition(CarPosition, NextPoint, CarSpeed), CurrentRoute}
 	end.
+
+car_to_atom(CarNumber) ->
+	list_to_atom(string:concat("erTest_car", lists:flatten(io_lib:format("~p", [CarNumber])))).

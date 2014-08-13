@@ -14,8 +14,20 @@ start_link() ->
 init([]) ->
 	% {ok, Default} = file:consult("./priv/cars.dat"),
 	{ok, Default} = file:consult(filename:join(code:priv_dir(erTest), "cars.dat")),
+	print_info(Default),
 	{ok,{{one_for_one,5,10}, lists:map(fun view/1, Default)}}.
 
 view(I) ->
 	{{number, CarNumber}, _, _} = I,
 	{CarNumber, {erTest_car, start_link, [I]}, permanent, 2000, worker, [erTest_car]}.
+
+car_numbers(I) ->
+	{{number, CarNumber}, _, _} = I,
+	io:format("~p~n", [CarNumber]).
+
+print_info(Numbers) ->
+	io:format("Loaded data about cars~n"),
+	lists:map(fun car_numbers/1, Numbers),
+	io:format("You can use erTest_car:start_car(Number) to start car~n"),
+	io:format("You can use erTest_car:stop_car(Number) to stop car~n"),
+	io:format("You can use erTest_car:car_position(Number) to know current car position~n").
