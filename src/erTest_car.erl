@@ -31,17 +31,16 @@ stop_car(CarNumber) ->
 start_car(CarNumber) ->
 	gen_fsm:send_event(car_to_atom(CarNumber), start).
 car_position(CarNumber) ->
-	gen_fsm:send_all_state_event(car_to_atom(CarNumber), position).
+	gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position).
 
 stationary(start, CarStatus) ->
 	{next_state, moving, CarStatus, ?FREQ};
 stationary(_Event, CarStatus) ->
 	{next_state, stationary, CarStatus}.
 
-moving(timeout, CarStatus) -> 
-	% #status{number = CarNumber} = CarStatus,
+moving(timeout, CarStatus = #status{number = CarNumber}) -> 
 	{NewPosition, NewRoute} = nextpoint(CarStatus),
-	% io:format("Car ~p now at ~p~n", [CarNumber, NewPosition]),
+	erTest_reporter:report_position(CarNumber, NewPosition),
 	{next_state, moving, CarStatus#status{position = NewPosition, current_route = NewRoute}, ?FREQ};
 moving(stop, CarStatus) ->
 	{next_state, stationary, CarStatus};
@@ -49,21 +48,17 @@ moving(_Event, CarStatus) ->
 	{next_state, moving, CarStatus, ?FREQ}.
 
 
-handle_event(position, StateName, CarStatus) ->
-	#status{position = CarPosition, number = CarNumber} = CarStatus,
-	io:format("Car ~p now at ~p and it is ~p~n", [CarNumber, CarPosition, StateName]),
-	if 
-		StateName == moving ->
-			{next_state, moving, CarStatus, ?FREQ};
-		StateName == stationary ->
-			{next_state, stationary, CarStatus}
-	end;
+
 handle_event(_Event, StateName, CarStatus) ->
 	{next_state, StateName, CarStatus}.
 
-handle_sync_event(_Event, _From, StateName, State) ->
-  Reply = {error, invalid_message},
-  {reply, Reply, StateName, State}.
+handle_sync_event(position, _From, StateName, CarStatus = #status{position = CarPosition}) ->
+	if 
+		StateName == moving ->
+			{reply, CarPosition, moving, CarStatus, ?FREQ};
+		StateName == stationary ->
+			{reply, CarPosition, stationary, CarStatus}
+	end.
 
 handle_info(_Info, StateName, State) ->
   {next_state, StateName, State}.
@@ -99,4 +94,4 @@ nextpoint(#status{position = CarPosition, current_route = CurrentRoute, speed = 
 	end.
 
 car_to_atom(CarNumber) ->
-	list_to_atom(string:concat("erTest_car", lists:flatten(io_lib:format("~p", [CarNumber])))).
+	list_to_atom(lists:flatten(io_lib:format("erTest_car~p", [CarNumber]))).

@@ -1,3 +1,4 @@
 #!/usr/bin/env sh
 
-ERL_LIBS=$PWD erl
+DEPS_LIBS=$(echo "$PWD"/deps/* | tr ' ' ':')
+ERL_LIBS=$PWD:$DEPS_LIBS erl -conf dev.config
