@@ -1,5 +1,12 @@
 -module(erTest_car).
--export([start/1]).
+
+-behaviour(gen_fsm).
+
+-export([start_link/1]).
+
+-export([init/1, moving/2, handle_event/3,
+         handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
+
 -record(status, {
 		position,
 		number,
@@ -8,11 +15,37 @@
 		current_route
 	}).
 
-start(I) ->
+start_link(I) ->
+	gen_fsm:start_link(?MODULE, [I], []).
+
+init([I]) ->
 	{{number, CarNumber}, {route, CarRoute}, {speed, CarSpeed}} = I, 
 	[CarPosition|_] = CarRoute,
-	CarStatus = #status{position = CarPosition, number = CarNumber, speed = CarSpeed, route = CarRoute, current_route = CarRoute},
-	{ok, spawn (fun() -> car(CarStatus) end)}.
+	{ok, moving, #status{position = CarPosition, number = CarNumber, speed = CarSpeed, route = CarRoute, current_route = CarRoute}, 1000}.
+
+moving(timeout, CarStatus) -> 
+	#status{number = CarNumber} = CarStatus,
+	{NewPosition, NewRoute} = nextpoint(CarStatus),
+	io:format("Car ~p now at ~p~n", [CarNumber, NewPosition]),
+	{next_state, moving, CarStatus#status{position = NewPosition, current_route = NewRoute}, 1000}.
+
+
+handle_event(_Event, StateName, State) ->
+  {next_state, StateName, State}.
+
+handle_sync_event(_Event, _From, StateName, State) ->
+  Reply = {error, invalid_message},
+  {reply, Reply, StateName, State}.
+
+handle_info(_Info, StateName, State) ->
+  {next_state, StateName, State}.
+
+terminate(_Reason, _StateName, _State) ->
+  ok.
+
+code_change(_OldVsn, StateName, State, _Extra) ->
+  {ok, StateName, State}.
+
 
 distance(Point1, Point2) ->
 	{X1, Y1} = Point1,
@@ -35,13 +68,4 @@ nextpoint(#status{position = CarPosition, current_route = CurrentRoute, speed = 
 			nextpoint(CarStatus#status{position = NextPoint, current_route = NewRoute, speed = CarSpeed - L});
 		L > CarSpeed ->
 			{newposition(CarPosition, NextPoint, CarSpeed), CurrentRoute}
-	end.
-
-car(CarStatus) ->
-	receive
-		after 1000 ->
-			#status{number = CarNumber} = CarStatus,
-			{NewPosition, NewRoute} = nextpoint(CarStatus),
-			io:format("Car ~p now at ~p~n", [CarNumber, NewPosition]),
-			car(CarStatus#status{position = NewPosition, current_route = NewRoute}) 
 	end.
