@@ -4,7 +4,7 @@
 
 -define(FREQ, 1000).
 
--export([start_link/1, stop_car/1, start_car/1, car_position/1]).
+-export([start_link/1, car_stop/1, car_start/1, car_position/1]).
 
 -export([init/1, moving/2, handle_event/3, stationary/2,
          handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
@@ -14,7 +14,8 @@
 		number,
 		speed,
 		route,
-		current_route
+		current_route,
+		time = 0
 	}).
 
 start_link(I) ->
@@ -26,12 +27,13 @@ init([I]) ->
 	[CarPosition|_] = CarRoute,
 	{ok, stationary, #status{position = CarPosition, number = CarNumber, speed = CarSpeed, route = CarRoute, current_route = CarRoute}}.
 
-stop_car(CarNumber) ->
+car_stop(CarNumber) ->
 	gen_fsm:send_event(car_to_atom(CarNumber), stop).
-start_car(CarNumber) ->
+car_start(CarNumber) ->
 	gen_fsm:send_event(car_to_atom(CarNumber), start).
 car_position(CarNumber) ->
-	gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position).
+	% io:format("Car ~p now at ~p~n", [CarNumber, gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position)]).
+	erTest_reporter:report_position(CarNumber, gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position)).
 
 stationary(start, CarStatus) ->
 	{next_state, moving, CarStatus, ?FREQ};
@@ -41,7 +43,8 @@ stationary(_Event, CarStatus) ->
 moving(timeout, CarStatus = #status{number = CarNumber}) -> 
 	{NewPosition, NewRoute} = nextpoint(CarStatus),
 	erTest_reporter:report_position(CarNumber, NewPosition),
-	{next_state, moving, CarStatus#status{position = NewPosition, current_route = NewRoute}, ?FREQ};
+	% io:format("Car ~p position: ~p~n", [CarNumber, NewPosition]),
+	{next_state, moving, CarStatus#status{position = NewPosition, current_route = NewRoute, time = milisecs()}, ?FREQ};
 moving(stop, CarStatus) ->
 	{next_state, stationary, CarStatus};
 moving(_Event, CarStatus) ->
@@ -52,10 +55,17 @@ moving(_Event, CarStatus) ->
 handle_event(_Event, StateName, CarStatus) ->
 	{next_state, StateName, CarStatus}.
 
-handle_sync_event(position, _From, StateName, CarStatus = #status{position = CarPosition}) ->
+handle_sync_event(position, _From, StateName, CarStatus = #status{position = CarPosition, time = T}) ->
 	if 
 		StateName == moving ->
-			{reply, CarPosition, moving, CarStatus, ?FREQ};
+			% NewTimeout = ?FREQ - milisecs() + T,
+			% if 
+			% 	NewTimeout > 0 -> 
+			% 		{reply, CarPosition, moving, CarStatus, NewTimeout};
+			% 	NewTimeout =< 0 ->
+			% 		{reply, CarPosition, moving, CarStatus, 0}
+			% end;
+			{reply, CarPosition, moving, CarStatus, ?FREQ - milisecs() + T};
 		StateName == stationary ->
 			{reply, CarPosition, stationary, CarStatus}
 	end.
@@ -95,3 +105,6 @@ nextpoint(#status{position = CarPosition, current_route = CurrentRoute, speed = 
 
 car_to_atom(CarNumber) ->
 	list_to_atom(lists:flatten(io_lib:format("erTest_car~p", [CarNumber]))).
+milisecs() ->
+	{MegaSecs, Secs, MicroSecs} = erlang:now(),
+	MegaSecs * 1000000000 + Secs*1000 + (MicroSecs div 1000).

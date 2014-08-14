@@ -28,6 +28,6 @@ car_numbers(I) ->
 print_info(Numbers) ->
 	io:format("Loaded data about cars~n"),
 	lists:map(fun car_numbers/1, Numbers),
-	io:format("You can use erTest_car:start_car(Number) to start car~n"),
-	io:format("You can use erTest_car:stop_car(Number) to stop car~n"),
+	io:format("You can use erTest_car:car_start(Number) to start car~n"),
+	io:format("You can use erTest_car:car_stop(Number) to stop car~n"),
 	io:format("You can use erTest_car:car_position(Number) to know current car position~n").
