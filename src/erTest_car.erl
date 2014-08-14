@@ -32,8 +32,8 @@ car_stop(CarNumber) ->
 car_start(CarNumber) ->
 	gen_fsm:send_event(car_to_atom(CarNumber), start).
 car_position(CarNumber) ->
-	% io:format("Car ~p now at ~p~n", [CarNumber, gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position)]).
-	erTest_reporter:report_position(CarNumber, gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position)).
+	io:format("Car ~p now at ~p~n", [CarNumber, gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position)]).
+	% erTest_reporter:report_position(CarNumber, gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position)).
 
 stationary(start, CarStatus) ->
 	{next_state, moving, CarStatus, ?FREQ};
@@ -43,7 +43,6 @@ stationary(_Event, CarStatus) ->
 moving(timeout, CarStatus = #status{number = CarNumber}) -> 
 	{NewPosition, NewRoute} = nextpoint(CarStatus),
 	erTest_reporter:report_position(CarNumber, NewPosition),
-	% io:format("Car ~p position: ~p~n", [CarNumber, NewPosition]),
 	{next_state, moving, CarStatus#status{position = NewPosition, current_route = NewRoute, time = milisecs()}, ?FREQ};
 moving(stop, CarStatus) ->
 	{next_state, stationary, CarStatus};
