@@ -15,7 +15,7 @@
 		speed,
 		route,
 		current_route,
-		time = 0
+		time = milisecs()
 	}).
 
 start_link(I) ->
@@ -46,8 +46,8 @@ moving(timeout, CarStatus = #status{number = CarNumber}) ->
 	{next_state, moving, CarStatus#status{position = NewPosition, current_route = NewRoute, time = milisecs()}, ?FREQ};
 moving(stop, CarStatus) ->
 	{next_state, stationary, CarStatus};
-moving(_Event, CarStatus) ->
-	{next_state, moving, CarStatus, ?FREQ}.
+moving(_Event, CarStatus = #status{time = T}) ->
+	{next_state, moving, CarStatus, ?FREQ - milisecs() + T}.
 
 
 
