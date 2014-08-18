@@ -3,6 +3,10 @@
 -behaviour(gen_fsm).
 
 -define(FREQ, 1000).
+-define(MOSCOW_LON, 55.75).
+-define(MOSCOW_LAT, 37.62).
+-define(ONE_LON, 62.6).
+-define(ONE_LAT, 111).
 
 -export([start_link/1, car_stop/1, car_start/1, car_position/1]).
 
@@ -25,15 +29,14 @@ start_link(I) ->
 init([I]) ->
 	{{number, CarNumber}, {route, CarRoute}, {speed, CarSpeed}} = I, 
 	[CarPosition|_] = CarRoute,
-	{ok, stationary, #status{position = CarPosition, number = CarNumber, speed = CarSpeed, route = CarRoute, current_route = CarRoute}}.
+	{ok, stationary, #status{position = CarPosition, number = CarNumber, speed = CarSpeed / 3600, route = CarRoute, current_route = CarRoute}}.
 
 car_stop(CarNumber) ->
 	gen_fsm:send_event(car_to_atom(CarNumber), stop).
 car_start(CarNumber) ->
 	gen_fsm:send_event(car_to_atom(CarNumber), start).
 car_position(CarNumber) ->
-	io:format("Car ~p now at ~p~n", [CarNumber, gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position)]).
-	% erTest_reporter:report_position(CarNumber, gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position)).
+	gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position).
 
 stationary(start, CarStatus) ->
 	{next_state, moving, CarStatus, ?FREQ};
@@ -57,13 +60,6 @@ handle_event(_Event, StateName, CarStatus) ->
 handle_sync_event(position, _From, StateName, CarStatus = #status{position = CarPosition, time = T}) ->
 	if 
 		StateName == moving ->
-			% NewTimeout = ?FREQ - milisecs() + T,
-			% if 
-			% 	NewTimeout > 0 -> 
-			% 		{reply, CarPosition, moving, CarStatus, NewTimeout};
-			% 	NewTimeout =< 0 ->
-			% 		{reply, CarPosition, moving, CarStatus, 0}
-			% end;
 			{reply, CarPosition, moving, CarStatus, ?FREQ - milisecs() + T};
 		StateName == stationary ->
 			{reply, CarPosition, stationary, CarStatus}
@@ -80,14 +76,14 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 
 
 distance(Point1, Point2) ->
-	{X1, Y1} = Point1,
-	{X2, Y2} = Point2,
+	{X1, Y1} = deg_to_km(Point1),
+	{X2, Y2} = deg_to_km(Point2),
 	math:sqrt((X2-X1)*(X2-X1)+(Y2-Y1)*(Y2-Y1)).
 
 newposition(Point1, Point2, L) ->
-	{X1, Y1} = Point1,
-	{X2, Y2} = Point2,
-	{X1 + L*(X2-X1)/distance(Point1, Point2), Y1 + L*(Y2-Y1)/distance(Point1, Point2)}.
+	{X1, Y1} = deg_to_km(Point1),
+	{X2, Y2} = deg_to_km(Point2),
+	km_to_deg({X1 + L*(X2-X1)/distance(Point1, Point2), Y1 + L*(Y2-Y1)/distance(Point1, Point2)}).
 
 nextpoint(#status{current_route = []} = CarStatus) ->
 	#status{route = NewRoute} = CarStatus,
@@ -107,3 +103,8 @@ car_to_atom(CarNumber) ->
 milisecs() ->
 	{MegaSecs, Secs, MicroSecs} = erlang:now(),
 	MegaSecs * 1000000000 + Secs*1000 + (MicroSecs div 1000).
+
+deg_to_km({Lon, Lat}) ->
+	{(Lon - ?MOSCOW_LON) * ?ONE_LON, (Lat - ?MOSCOW_LAT) * ?ONE_LAT}.
+km_to_deg({X, Y}) ->
+	{(X / ?ONE_LON) + ?MOSCOW_LON, (Y / ?ONE_LAT) + ?MOSCOW_LAT}.
