@@ -11,7 +11,8 @@
 -export([start_link/1, car_stop/1, car_start/1, car_position/1]).
 
 -export([init/1, moving/2, handle_event/3, stationary/2,
-         handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
+         handle_sync_event/4, handle_info/3, terminate/3, code_change/4,
+         km_to_deg/1, deg_to_km/1]).
 
 -record(status, {
 		position,
@@ -82,7 +83,7 @@ distance(Point1, Point2) ->
 
 newposition(Point1, Point2, L) ->
 	{X1, Y1} = deg_to_km(Point1),
-	{X2, Y2} = deg_to_km(Point2),
+	{X2, Y2} = deg_to_km(Point2),	
 	km_to_deg({X1 + L*(X2-X1)/distance(Point1, Point2), Y1 + L*(Y2-Y1)/distance(Point1, Point2)}).
 
 nextpoint(#status{current_route = []} = CarStatus) ->
