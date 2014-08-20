@@ -4,7 +4,7 @@
 -export([start/2, stop/1]).
 
 start(_Type, _Args) ->
-	erTest_sup:start_link().
+	erTest_msup:start_link().
  
 stop(_State) ->
   exit(whereis(erTest_sup), shutdown).
