@@ -8,8 +8,8 @@
 
 -define(SERVER, ?MODULE).
 -define(ROUTES, 10000).
--define(CARS, 100).
--define(SUPERVISORS, 9).
+-define(CARS, 100000).
+-define(SUPERVISORS, 100).
 -define(MAPSIZE, 100).
 
 start_link() ->

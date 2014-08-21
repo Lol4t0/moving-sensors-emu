@@ -24,20 +24,20 @@
 	}).
 
 start_link(I) ->
-	{{number, CarNumber}, _, _} = I,
-	gen_fsm:start_link({local, car_to_atom(CarNumber)}, ?MODULE, [I], []).
+	gen_fsm:start_link(?MODULE, [I], []).
 
 init([I]) ->
 	{{number, CarNumber}, {route, CarRoute}, {speed, CarSpeed}} = I, 
 	[CarPosition|_] = CarRoute,
+	gproc:add_local_name(CarNumber),
 	{ok, stationary, #status{position = CarPosition, number = CarNumber, speed = CarSpeed / 3600, route = CarRoute, current_route = CarRoute}}.
 
 car_stop(CarNumber) ->
-	gen_fsm:send_event(car_to_atom(CarNumber), stop).
+	gen_fsm:send_event(gproc:lookup_local_name(CarNumber), stop).
 car_start(CarNumber) ->
-	gen_fsm:send_event(car_to_atom(CarNumber), start).
+	gen_fsm:send_event(gproc:lookup_local_name(CarNumber), start).
 car_position(CarNumber) ->
-	gen_fsm:sync_send_all_state_event(car_to_atom(CarNumber), position).
+	gen_fsm:sync_send_all_state_event(gproc:lookup_local_name(CarNumber), position).
 
 stationary(start, CarStatus) ->
 	{next_state, moving, CarStatus, ?FREQ};

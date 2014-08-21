@@ -5,7 +5,8 @@
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+		  gproc
                  ]},
   {mod, { erTest_app, []}},
   {env, []}

@@ -4,4 +4,5 @@
 
 start_stuff() ->
 	lager:start(),
+	application:start(gproc),
 	application:start(erTest).
