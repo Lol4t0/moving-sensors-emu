@@ -22,25 +22,21 @@ start_link() ->
 	Super.
 
 init([]) ->
-	Routes = generate_routes(?ROUTES),
-	Supers = create_supervisors(1, Routes),
+	Routes = lists:map(fun generate_route/1, lists:seq(1, ?ROUTES)),
+	Supers = lists:map(fun(N) -> create_supervisor(N, Routes) end, lists:seq(1, ?SUPERVISORS)),
 	{ok,{{one_for_one,5,10}, Supers}}.
 
-create_supervisors(?SUPERVISORS, Routes) -> 
+create_supervisor(?SUPERVISORS, Routes) -> 
 	Q = ?CARS div ?SUPERVISORS,
 	StartNumber = (?SUPERVISORS - 1) * Q,
-	Super = {?SUPERVISORS, {erTest_sup, start_link, [Routes, Q + ?CARS rem ?SUPERVISORS, StartNumber, ?SUPERVISORS]}, permanent, 2000, supervisor, [erTest_sup]},
-	[Super];	
-create_supervisors(Number, Routes) ->
+	{?SUPERVISORS, {erTest_sup, start_link, [Routes, Q + ?CARS rem ?SUPERVISORS, StartNumber, ?SUPERVISORS]}, permanent, 2000, supervisor, [erTest_sup]};	
+create_supervisor(Number, Routes) ->
 	Q = ?CARS div ?SUPERVISORS,
 	StartNumber = (Number - 1) * Q,
-	Super = {Number, {erTest_sup, start_link, [Routes, Q, StartNumber, Number]}, permanent, 2000, supervisor, [erTest_sup]},
-	[Super | create_supervisors(Number + 1, Routes)].
+	{Number, {erTest_sup, start_link, [Routes, Q, StartNumber, Number]}, permanent, 2000, supervisor, [erTest_sup]}.
 
-route(0) -> [];
-route(Q) ->
-	[erTest_car:km_to_deg({(random:uniform() - 0.5) * ?MAPSIZE, (random:uniform() - 0.5) * ?MAPSIZE})|route(Q - 1)].
+route(_Number) ->
+	erTest_car:km_to_deg({(random:uniform() - 0.5) * ?MAPSIZE, (random:uniform() - 0.5) * ?MAPSIZE}).
 
-generate_routes(0) -> [];
-generate_routes(Q) -> 
-	[route(random:uniform(7) + 3)|generate_routes(Q - 1)].
+generate_route(_Number) -> 
+	lists:map(fun route/1, lists:seq(1, random:uniform(7) + 3)).
