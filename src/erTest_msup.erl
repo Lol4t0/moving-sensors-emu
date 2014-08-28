@@ -7,9 +7,9 @@
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
--define(ROUTES, 10000).
--define(CARS, 100000).
--define(SUPERVISORS, 100).
+-define(ROUTES, 10).
+-define(CARS, 5).
+-define(SUPERVISORS, 2).
 -define(MAPSIZE, 100).
 
 start_link() ->
