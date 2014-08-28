@@ -99,8 +99,8 @@ nextpoint(#status{position = CarPosition, current_route = CurrentRoute, speed = 
 			{newposition(CarPosition, NextPoint, CarSpeed), CurrentRoute}
 	end.
 
-car_to_atom(CarNumber) ->
-	list_to_atom(lists:flatten(io_lib:format("erTest_car~p", [CarNumber]))).
+% car_to_atom(CarNumber) ->
+% 	list_to_atom(lists:flatten(io_lib:format("erTest_car~p", [CarNumber]))).
 milisecs() ->
 	{MegaSecs, Secs, MicroSecs} = erlang:now(),
 	MegaSecs * 1000000000 + Secs*1000 + (MicroSecs div 1000).
