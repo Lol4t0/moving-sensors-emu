@@ -12,6 +12,7 @@ init({tcp, http}, _Req, _Opts) ->
 
 websocket_init(_TransportName, Req, _Opts) ->
 	erlang:register(websocket, self()),
+	erTest_sup:start_all_cars(),
     {ok, Req, undefined_state}.
 
 websocket_handle({text, Msg}, Req, State) ->
@@ -25,4 +26,5 @@ websocket_info(_Info, Req, State) ->
     {ok, Req, State}.
 
 websocket_terminate(_Reason, _Req, _State) ->
+	erTest_sup:stop_all_cars(),
     ok.

@@ -5,8 +5,8 @@
 -define(FREQ, 1000).
 -define(MOSCOW_LON, 55.75).
 -define(MOSCOW_LAT, 37.62).
--define(ONE_LON, 62.6).
--define(ONE_LAT, 111).
+-define(ONE_LAT, 62.6).
+-define(ONE_LON, 111).
 
 -export([start_link/1, car_stop/1, car_start/1, car_position/1]).
 
@@ -30,7 +30,7 @@ init([I]) ->
 	{{number, CarNumber}, {route, CarRoute}, {speed, CarSpeed}} = I, 
 	[CarPosition|_] = CarRoute,
 	gproc:add_local_name(CarNumber),
-	{ok, stationary, #status{position = CarPosition, number = CarNumber, speed = CarSpeed / 3600, route = CarRoute, current_route = CarRoute}}.
+	{ok, stationary, #status{position = CarPosition, number = CarNumber, speed = CarSpeed / 3600, route = CarRoute, current_route = CarRoute, time = milisecs()}}.
 
 car_stop(CarNumber) ->
 	gen_fsm:send_event(gproc:lookup_local_name(CarNumber), stop).
@@ -99,8 +99,6 @@ nextpoint(#status{position = CarPosition, current_route = CurrentRoute, speed = 
 			{newposition(CarPosition, NextPoint, CarSpeed), CurrentRoute}
 	end.
 
-% car_to_atom(CarNumber) ->
-% 	list_to_atom(lists:flatten(io_lib:format("erTest_car~p", [CarNumber]))).
 milisecs() ->
 	{MegaSecs, Secs, MicroSecs} = erlang:now(),
 	MegaSecs * 1000000000 + Secs*1000 + (MicroSecs div 1000).

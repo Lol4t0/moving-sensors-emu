@@ -4,11 +4,13 @@
 
 -export([start_link/0]).
 
+-export([start_all_cars/0, stop_all_cars/0]).
+
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
--define(ROUTES, 10).
--define(CARS, 5).
+-define(ROUTES, 1000).
+-define(CARS, 100).
 -define(MAPSIZE, 100).
 
 start_link() ->
@@ -27,5 +29,13 @@ generate_route(_Number) ->
 
 generate_car(Number, Routes) ->
 	Route = lists:nth(random:uniform(erlang:length(Routes)), Routes),
-	I = {{number, Number}, {route, Route}, {speed, random:uniform(30) + 600}},
+	I = {{number, Number}, {route, Route}, {speed, random:uniform(30) + 1000}},
 	{Number, {erTest_car, start_link, [I]}, permanent, 2000, worker, [erTest_car]}.
+
+start_all_cars() -> 
+	lists:map(fun erTest_car:car_start/1, lists:seq(1, ?CARS)),
+	ok.
+
+stop_all_cars() -> 
+	lists:map(fun erTest_car:car_stop/1, lists:seq(1, ?CARS)),
+	ok.
