@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Leaflet Quick Start Guide Example</title>
+	<title>erTest</title>
 	<meta charset="utf-8" />
 
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,13 +9,37 @@
 	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
 </head>
 <body>
-	<div id="map" style="width: 600px; height: 400px"></div>
+	<div id="map" style="width: 1440px; height: 800px"></div>
 
 	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
 	<script>
+		var cars = [];
+		var routes = [];
+		var map = L.map('map').setView([55.75, 37.62], 10);
+		var ws = new Object;
 
-		var map = L.map('map').setView([51.505, -0.09], 13);
+	    ws = new WebSocket("ws://"+window.location.host+"/websocket");
+	    ws.onopen = function() {
+	        console.log('connected');
+	    };
+	    ws.onmessage = function (evt)
+	    {
+	        var received_msg = evt.data;
+	        var point = JSON.parse(received_msg);
 
+	        var id =point[0]; 
+	        var x = point[1];
+	        var y = point[2];
+
+	        console.log("Received: id=" + point[0] + ', x=' + x + ', y=' + y);
+	        L.polyline([], {color: 'red'})
+	        if (routes[id] == undefined){
+	        	cars[id] = L.marker([51.5, -0.09]);
+	        	routes[id] = L.polyline([], {color: 'red'});
+	        }
+			routes[id].addLatLng(L.latLng(x, y)).addTo(map);
+			cars[id].setLatLng(L.latLng(x, y)).addTo(map);
+	    };
 		L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
 			maxZoom: 18,
 			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
@@ -23,34 +47,6 @@
 				'Imagery © <a href="http://mapbox.com">Mapbox</a>',
 			id: 'examples.map-i86knfo3'
 		}).addTo(map);
-
-
-		L.marker([51.5, -0.09]).addTo(map)
-			.bindPopup("<b>Hello world!</b><br />I am a popup.").openPopup();
-
-		L.circle([51.508, -0.11], 500, {
-			color: 'red',
-			fillColor: '#f03',
-			fillOpacity: 0.5
-		}).addTo(map).bindPopup("I am a circle.");
-
-		L.polygon([
-			[51.509, -0.08],
-			[51.503, -0.06],
-			[51.51, -0.047]
-		]).addTo(map).bindPopup("I am a polygon.");
-
-
-		var popup = L.popup();
-
-		function onMapClick(e) {
-			popup
-				.setLatLng(e.latlng)
-				.setContent("You clicked the map at " + e.latlng.toString())
-				.openOn(map);
-		}
-
-		map.on('click', onMapClick);
 
 	</script>
 </body>

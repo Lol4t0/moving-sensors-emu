@@ -2,21 +2,30 @@
 
 -behaviour(supervisor).
 
--export([start_link/4]).
+-export([start_link/0]).
 
 -export([init/1]).
 
-start_link(Routes, Cars, StartNumber, Name) ->
-	supervisor:start_link({local, sup_to_atom(Name)}, ?MODULE, [Routes, Cars, StartNumber]).
+-define(SERVER, ?MODULE).
+-define(ROUTES, 10).
+-define(CARS, 5).
+-define(MAPSIZE, 100).
 
-init([Routes, CarsNumber, StartNumber]) ->
-	Cars = lists:map(fun(N) -> generate_car(N, Routes, StartNumber) end, lists:seq(1, CarsNumber)),
+start_link() ->
+	supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+
+init([]) ->
+	Routes = lists:map(fun generate_route/1, lists:seq(1, ?ROUTES)),
+	Cars = lists:map(fun(N) -> generate_car(N, Routes) end, lists:seq(1, ?CARS)),
 	{ok,{{one_for_one,5,10}, Cars}}.
 
-generate_car(Number, Routes, StartNumber) ->
-	Route = lists:nth(random:uniform(erlang:length(Routes)), Routes),
-	I = {{number, Number + StartNumber}, {route, Route}, {speed, random:uniform(30) + 60}},
-	{Number, {erTest_car, start_link, [I]}, permanent, 2000, worker, [erTest_car]}.
+route(_Number) ->
+	erTest_car:km_to_deg({(random:uniform() - 0.5) * ?MAPSIZE, (random:uniform() - 0.5) * ?MAPSIZE}).
 
-sup_to_atom(Number) ->
-	list_to_atom(lists:flatten(io_lib:format("erTest_sup~p", [Number]))).
+generate_route(_Number) -> 
+	lists:map(fun route/1, lists:seq(1, random:uniform(7) + 3)).
+
+generate_car(Number, Routes) ->
+	Route = lists:nth(random:uniform(erlang:length(Routes)), Routes),
+	I = {{number, Number}, {route, Route}, {speed, random:uniform(30) + 600}},
+	{Number, {erTest_car, start_link, [I]}, permanent, 2000, worker, [erTest_car]}.

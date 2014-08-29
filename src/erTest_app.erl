@@ -6,6 +6,7 @@
 dispatch_rules() ->
     cowboy_router:compile([
         {'_', [
+            {"/websocket", erTest_handler, []},
             {"/", cowboy_static, {priv_file, erTest, "index.html"}},
             {'_', notfound_handler, []}
         ]}
@@ -18,7 +19,7 @@ start(_Type, _Args) ->
         [{port, Port}],
         [{env, [{dispatch, Dispatch}]}]
     ),
-	erTest_msup:start_link().
+	erTest_sup:start_link().
  
 stop(_State) ->
   exit(whereis(erTest_sup), shutdown).
