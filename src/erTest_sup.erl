@@ -29,7 +29,7 @@ generate_route(_Number) ->
 
 generate_car(Number, Routes) ->
 	Route = lists:nth(random:uniform(erlang:length(Routes)), Routes),
-	I = {{number, Number}, {route, Route}, {speed, random:uniform(30) + 1000}},
+	I = {{number, Number}, {route, Route}, {speed, random:uniform(30) + 60}},
 	{Number, {erTest_car, start_link, [I]}, permanent, 2000, worker, [erTest_car]}.
 
 start_all_cars() -> 
