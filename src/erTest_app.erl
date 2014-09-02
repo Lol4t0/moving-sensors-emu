@@ -6,8 +6,8 @@
 dispatch_rules() ->
     cowboy_router:compile([
         {'_', [
-            {"/websocket", erTest_handler, []},
-            {"/", cowboy_static, {priv_file, erTest, "index.html"}},
+            {"/erTest/websocket", erTest_handler, []},
+            {"/erTest", cowboy_static, {priv_file, erTest, "index.html"}},
             {'_', notfound_handler, []}
         ]}
     ]).
