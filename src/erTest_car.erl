@@ -8,7 +8,7 @@
 -define(ONE_LAT, 111.3).
 -define(ONE_LON, 111).
 
--export([start_link/1, car_stop/1, car_start/1, car_position/1, delay_start/1]).
+-export([start_link/1, car_stop/1, car_start/1, car_position/1]).
 
 -export([init/1, moving/2, handle_event/3, stationary/2,
          handle_sync_event/4, handle_info/3, terminate/3, code_change/4,
@@ -43,13 +43,9 @@ car_stop(CarNumber) ->
 	gen_fsm:send_event(gproc:lookup_local_name(CarNumber), stop).
 car_start(CarNumber) ->
 	gen_fsm:send_event(gproc:lookup_local_name(CarNumber), start).
-delay_start(CarNumber) ->
-	gen_fsm:send_event(gproc:lookup_local_name(CarNumber), delay).
 car_position(CarNumber) ->
 	gen_fsm:sync_send_all_state_event(gproc:lookup_local_name(CarNumber), position).
 
-stationary(delay, CarStatus) ->
-	{next_state, moving, CarStatus, ?FREQ + random:uniform(30000)};
 stationary(start, CarStatus) ->
 	{next_state, moving, CarStatus, ?FREQ};
 stationary(_Event, CarStatus) ->

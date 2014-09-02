@@ -15,7 +15,7 @@
 	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
 	<script>
 		var cars = [];
-		// var routes = [];
+		var routes = [];
 		var map = L.map('map').setView([55.75, 37.62], 10);
 		var ws = new Object;
 
@@ -34,11 +34,11 @@
 
 	        L.polyline([], {color: 'red'})
 	        if (cars[id] == undefined){
-	        	cars[id] = L.circleMarker([51.5, -0.09], {	color: 'red', 
-	        												fillColor: 'white'}).setRadius(3);
-	        	// routes[id] = L.polyline([], {color: 'red'});
+	        	cars[id] = L.circleMarker([51.5, -0.09], {	color: 'green', 
+	        												fillColor: 'red'}).setRadius(4);
+	        	routes[id] = L.polyline([], {color: 'red'});
 	        }
-			// routes[id].addLatLng(L.latLng(x, y)).addTo(map);
+			routes[id].addLatLng(L.latLng(x, y)).addTo(map);
 			cars[id].setLatLng(L.latLng(x, y)).addTo(map);
 	    };
 	    ws.onclose = function() {
