@@ -9,23 +9,21 @@
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
--define(ROUTES, 1000).
--define(CARS, 100).
--define(MAPSIZE, 100).
+-define(CARS, 1000).
+-define(MOSCOW_LON, 55.75).
+-define(MOSCOW_LAT, 37.62).
 
 start_link() ->
 	supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 init([]) ->
-	Routes = lists:map(fun generate_route/1, lists:seq(1, ?ROUTES)),
+	Routes = read_routes(filename:join(code:priv_dir(erTest), "tracks.dat")),
 	Cars = lists:map(fun(N) -> generate_car(N, Routes) end, lists:seq(1, ?CARS)),
 	{ok,{{one_for_one,5,10}, Cars}}.
 
-route(_Number) ->
-	erTest_car:km_to_deg({(random:uniform() - 0.5) * ?MAPSIZE, (random:uniform() - 0.5) * ?MAPSIZE}).
-
-generate_route(_Number) -> 
-	lists:map(fun route/1, lists:seq(1, random:uniform(7) + 3)).
+read_routes(Path) ->
+	{ok, Routes} = file:consult(Path),
+	Routes.
 
 generate_car(Number, Routes) ->
 	Route = lists:nth(random:uniform(erlang:length(Routes)), Routes),

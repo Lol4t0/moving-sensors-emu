@@ -5,10 +5,10 @@
 -define(FREQ, 1000).
 -define(MOSCOW_LON, 55.75).
 -define(MOSCOW_LAT, 37.62).
--define(ONE_LAT, 62.6).
+-define(ONE_LAT, 111.3).
 -define(ONE_LON, 111).
 
--export([start_link/1, car_stop/1, car_start/1, car_position/1]).
+-export([start_link/1, car_stop/1, car_start/1, car_position/1, delay_start/1]).
 
 -export([init/1, moving/2, handle_event/3, stationary/2,
          handle_sync_event/4, handle_info/3, terminate/3, code_change/4,
@@ -20,6 +20,7 @@
 		speed,
 		route,
 		current_route,
+		res,
 		time = milisecs()
 	}).
 
@@ -30,24 +31,32 @@ init([I]) ->
 	{{number, CarNumber}, {route, CarRoute}, {speed, CarSpeed}} = I, 
 	[CarPosition|_] = CarRoute,
 	gproc:add_local_name(CarNumber),
-	{ok, stationary, #status{position = CarPosition, number = CarNumber, speed = CarSpeed / 3600, route = CarRoute, current_route = CarRoute, time = milisecs()}}.
+	{ok, stationary, #status{	position = CarPosition, 
+								number = CarNumber, 
+								speed = CarSpeed / 3600, 
+								route = CarRoute, 
+								current_route = CarRoute, 
+								res = CarSpeed / 3600, 
+								time = milisecs()}}.
 
 car_stop(CarNumber) ->
 	gen_fsm:send_event(gproc:lookup_local_name(CarNumber), stop).
 car_start(CarNumber) ->
 	gen_fsm:send_event(gproc:lookup_local_name(CarNumber), start).
+delay_start(CarNumber) ->
+	gen_fsm:send_event(gproc:lookup_local_name(CarNumber), delay).
 car_position(CarNumber) ->
 	gen_fsm:sync_send_all_state_event(gproc:lookup_local_name(CarNumber), position).
 
+stationary(delay, CarStatus) ->
+	{next_state, moving, CarStatus, ?FREQ + random:uniform(30000)};
 stationary(start, CarStatus) ->
 	{next_state, moving, CarStatus, ?FREQ};
 stationary(_Event, CarStatus) ->
 	{next_state, stationary, CarStatus}.
 
-moving(timeout, CarStatus = #status{number = CarNumber}) -> 
-	{NewPosition, NewRoute} = nextpoint(CarStatus),
-	erTest_reporter:report_position(CarNumber, NewPosition),
-	{next_state, moving, CarStatus#status{position = NewPosition, current_route = NewRoute, time = milisecs()}, ?FREQ};
+moving(timeout, CarStatus) -> 
+	{next_state, moving, nextpoint(CarStatus), ?FREQ};
 moving(stop, CarStatus) ->
 	{next_state, stationary, CarStatus};
 moving(_Event, CarStatus = #status{time = T}) ->
@@ -86,17 +95,23 @@ newposition(Point1, Point2, L) ->
 	{X2, Y2} = deg_to_km(Point2),	
 	km_to_deg({X1 + L*(X2-X1)/distance(Point1, Point2), Y1 + L*(Y2-Y1)/distance(Point1, Point2)}).
 
-nextpoint(#status{current_route = []} = CarStatus) ->
-	#status{route = NewRoute} = CarStatus,
-	nextpoint(CarStatus#status{current_route = NewRoute});
-nextpoint(#status{position = CarPosition, current_route = CurrentRoute, speed = CarSpeed} = CarStatus) ->
+nextpoint(#status{current_route = [], route = OldRoute} = CarStatus) ->
+	NewRoute = lists:reverse(OldRoute),
+	nextpoint(CarStatus#status{route = NewRoute, current_route = NewRoute});
+nextpoint(#status{	position = CarPosition, 
+					current_route = CurrentRoute, 
+					speed = CarSpeed, 
+					number = CarNumber, 
+					res = Residual} = CarStatus) ->
 	[NextPoint|NewRoute] = CurrentRoute,
 	L = distance(CarPosition, NextPoint),
 	if
-		L =< CarSpeed ->
-			nextpoint(CarStatus#status{position = NextPoint, current_route = NewRoute, speed = CarSpeed - L});
-		L > CarSpeed ->
-			{newposition(CarPosition, NextPoint, CarSpeed), CurrentRoute}
+		L =< Residual ->
+			nextpoint(CarStatus#status{position = NextPoint, current_route = NewRoute, res = Residual - L});
+		L > Residual ->
+			NewPosition = newposition(CarPosition, NextPoint, CarSpeed),
+			erTest_reporter:report_position(CarNumber, NewPosition),
+			CarStatus#status{position = NewPosition, current_route = CurrentRoute, res = CarSpeed, time = milisecs()}
 	end.
 
 milisecs() ->
@@ -104,6 +119,6 @@ milisecs() ->
 	MegaSecs * 1000000000 + Secs*1000 + (MicroSecs div 1000).
 
 deg_to_km({Lon, Lat}) ->
-	{(Lon - ?MOSCOW_LON) * ?ONE_LON, (Lat - ?MOSCOW_LAT) * ?ONE_LAT}.
+	{Lon * ?ONE_LON, Lat * (?ONE_LAT * math:cos(Lon * math:pi() / 180))}.
 km_to_deg({X, Y}) ->
-	{(X / ?ONE_LON) + ?MOSCOW_LON, (Y / ?ONE_LAT) + ?MOSCOW_LAT}.
+	{X / ?ONE_LON, Y / (?ONE_LAT * math:cos((X / ?ONE_LON) * math:pi() / 180))}.
