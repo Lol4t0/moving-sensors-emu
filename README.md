@@ -15,4 +15,4 @@ erTest
 ./start_test.sh
 ```
 
-Результат работы можно увидеть тут http://localhost:8008/ 
+Результат работы можно увидеть тут http://localhost:8008/erTest
