@@ -15,35 +15,43 @@
 	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
 	<script>
 		var cars = [];
-		var routes = [];
+		var track = L.polyline([]);
 		var map = L.map('map').setView([55.75, 37.62], 10);
-		var ws = new Object;
 
-	    ws = new WebSocket("ws://"+window.location.host+"/erTest/websocket");
-	    ws.onopen = function() {
-	        console.log('connected');
-	    };
+	    var ws = new WebSocket("ws://"+window.location.host+"/erTest/websocket");
+
 	    ws.onmessage = function (evt)
 	    {
-	        var received_msg = evt.data;
-	        var point = JSON.parse(received_msg);
-
-	        var id =point[0]; 
-	        var x = point[1];
-	        var y = point[2];
-
-	        L.polyline([], {color: 'red'})
-	        if (cars[id] == undefined){
-	        	cars[id] = L.circleMarker([51.5, -0.09], {	color: 'green', 
-	        												fillColor: 'red'}).setRadius(4);
-	        	routes[id] = L.polyline([], {color: 'red'});
+	        var data = JSON.parse(evt.data);
+	        if (data.is_track){
+	        	for(var i = 0; i < data.track.length; i++){
+	        		data.track[i] = L.latLng(data.track[i].lon, data.track[i].lat);
+	        	}
+	        	track.setLatLngs(data.track).addTo(map);
 	        }
-			routes[id].addLatLng(L.latLng(x, y)).addTo(map);
-			cars[id].setLatLng(L.latLng(x, y)).addTo(map);
+	        else{
+		        if (cars[data.id] == undefined){
+		        	cars[data.id] = L.marker([data.lon, data.lat]).
+		        							bindPopup(data.id.toString() + " speed:" + data.speed.toString()).
+		        							on('popupopen', showTrack).
+		        							on('popupclose', hideTrack).
+		        							addTo(map);
+		        }
+		        else{
+		        	cars[data.id].setLatLng(L.latLng(data.lon, data.lat)).addTo(map);
+		        }
+		    }
 	    };
-	    ws.onclose = function() {
-	        console.log('closed');
-	    };
+
+	    function showTrack(e) {
+	    	ws.send(e.popup.getContent());
+		};
+
+		function hideTrack(e) {
+			track.setLatLngs([]).addTo(map);
+		};
+
+
 		L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
 			maxZoom: 18,
 			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +

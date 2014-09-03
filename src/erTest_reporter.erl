@@ -1,7 +1,19 @@
 -module(erTest_reporter).
 
--export([report_position/2]).
+-export([report_position/1]).
 
-report_position(CarNumber, PositionData) ->
-	{Lon, Lat} = PositionData,
-	websocket ! {position, io_lib:format("[~p,~p,~p]", [CarNumber, Lon, Lat])}.	
+-record(status, {
+		position,
+		number,
+		speed,
+		route,
+		current_route,
+		res,
+		time
+	}).
+
+report_position(#status{position={Lon, Lat}, number = CarNumber, speed = CarSpeed} = CarStatus) ->
+	websocket ! {position, jiffy:encode( {[{is_track, false}, {id, CarNumber}, {lon, Lon}, {lat, Lat}, {speed, CarSpeed * 3600}]} )},
+	CarStatus.
+
+

@@ -8,7 +8,7 @@
 -define(ONE_LAT, 111.3).
 -define(ONE_LON, 111).
 
--export([start_link/1, car_stop/1, car_start/1, car_position/1]).
+-export([start_link/1, car_stop/1, car_start/1, car_position/1, car_route/1]).
 
 -export([init/1, moving/2, handle_event/3, stationary/2,
          handle_sync_event/4, handle_info/3, terminate/3, code_change/4,
@@ -45,6 +45,8 @@ car_start(CarNumber) ->
 	gen_fsm:send_event(gproc:lookup_local_name(CarNumber), start).
 car_position(CarNumber) ->
 	gen_fsm:sync_send_all_state_event(gproc:lookup_local_name(CarNumber), position).
+car_route(CarNumber) ->
+	gen_fsm:sync_send_all_state_event(gproc:lookup_local_name(CarNumber), route).
 
 stationary(start, CarStatus) ->
 	{next_state, moving, CarStatus, ?FREQ};
@@ -69,6 +71,13 @@ handle_sync_event(position, _From, StateName, CarStatus = #status{position = Car
 			{reply, CarPosition, moving, CarStatus, ?FREQ - milisecs() + T};
 		StateName == stationary ->
 			{reply, CarPosition, stationary, CarStatus}
+	end;
+handle_sync_event(route, _From, StateName, CarStatus = #status{route = CarRoute, time = T}) ->
+	if 
+		StateName == moving ->
+			{reply, CarRoute, moving, CarStatus, ?FREQ - milisecs() + T};
+		StateName == stationary ->
+			{reply, CarRoute, stationary, CarStatus}
 	end.
 
 handle_info(_Info, StateName, State) ->
@@ -96,8 +105,7 @@ nextpoint(#status{current_route = [], route = OldRoute} = CarStatus) ->
 	nextpoint(CarStatus#status{route = NewRoute, current_route = NewRoute});
 nextpoint(#status{	position = CarPosition, 
 					current_route = CurrentRoute, 
-					speed = CarSpeed, 
-					number = CarNumber, 
+					speed = CarSpeed,
 					res = Residual} = CarStatus) ->
 	[NextPoint|NewRoute] = CurrentRoute,
 	L = distance(CarPosition, NextPoint),
@@ -106,8 +114,10 @@ nextpoint(#status{	position = CarPosition,
 			nextpoint(CarStatus#status{position = NextPoint, current_route = NewRoute, res = Residual - L});
 		L > Residual ->
 			NewPosition = newposition(CarPosition, NextPoint, CarSpeed),
-			erTest_reporter:report_position(CarNumber, NewPosition),
-			CarStatus#status{position = NewPosition, current_route = CurrentRoute, res = CarSpeed, time = milisecs()}
+			erTest_reporter:report_position(CarStatus#status{	position = NewPosition, 
+																current_route = CurrentRoute, 
+																res = CarSpeed, 
+																time = milisecs()})
 	end.
 
 milisecs() ->

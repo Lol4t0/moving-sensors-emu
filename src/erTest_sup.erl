@@ -9,7 +9,7 @@
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
--define(CARS, 1000).
+-define(CARS, 100).
 -define(MOSCOW_LON, 55.75).
 -define(MOSCOW_LAT, 37.62).
 
