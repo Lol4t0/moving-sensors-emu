@@ -31,13 +31,13 @@ init([I]) ->
 	{{number, CarNumber}, {route, CarRoute}, {speed, CarSpeed}} = I, 
 	[CarPosition|_] = CarRoute,
 	gproc:add_local_name(CarNumber),
-	{ok, stationary, #status{	position = CarPosition, 
-								number = CarNumber, 
-								speed = CarSpeed / 3600, 
-								route = CarRoute, 
-								current_route = CarRoute, 
-								res = CarSpeed / 3600, 
-								time = milisecs()}}.
+	{ok, moving, #status{	position = CarPosition, 
+							number = CarNumber, 
+							speed = CarSpeed / 3600, 
+							route = CarRoute, 
+							current_route = CarRoute, 
+							res = CarSpeed / 3600, 
+							time = milisecs()}, ?FREQ}.
 
 car_stop(CarNumber) ->
 	gen_fsm:send_event(gproc:lookup_local_name(CarNumber), stop).

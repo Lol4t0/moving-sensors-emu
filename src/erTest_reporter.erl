@@ -13,7 +13,10 @@
 	}).
 
 report_position(#status{position={Lon, Lat}, number = CarNumber, speed = CarSpeed} = CarStatus) ->
-	websocket ! {position, jiffy:encode( {[{is_track, false}, {id, CarNumber}, {lon, Lon}, {lat, Lat}, {speed, CarSpeed * 3600}]} )},
+	case whereis(websocket) of
+		undefined -> wait;
+		Pid -> Pid ! {position, jiffy:encode( {[{is_track, false}, {id, CarNumber}, {lon, Lon}, {lat, Lat}, {speed, CarSpeed * 3600}]} )}
+	end,
 	CarStatus.
 
 

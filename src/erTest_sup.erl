@@ -19,7 +19,7 @@ start_link() ->
 init([]) ->
 	Routes = read_routes(filename:join(code:priv_dir(erTest), "tracks.dat")),
 	Cars = lists:map(fun(N) -> generate_car(N, Routes) end, lists:seq(1, ?CARS)),
-	{ok,{{one_for_one,5,10}, Cars}}.
+	{ok,{{one_for_one, 10000, 1}, Cars}}.
 
 read_routes(Path) ->
 	{ok, Routes} = file:consult(Path),
