@@ -3,9 +3,6 @@
 
 -export([main/0]).
 
--define(PATH, "/Projects/interesting_project").
--define(MASK, "\\..*(cpp|c)").
-
 main() ->
     {#xmlElement{content=KML},_Miscg}=xmerl_scan:file(filename:join(code:priv_dir(erTest), "tracks.kml")),
     [#xmlElement{content=Doc}|_] = [A || A <- KML, is('Document', A)],

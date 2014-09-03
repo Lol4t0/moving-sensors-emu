@@ -9,7 +9,7 @@
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
--define(CARS, 1000).
+-define(CARS, 100).
 -define(MOSCOW_LON, 55.75).
 -define(MOSCOW_LAT, 37.62).
 
@@ -19,7 +19,7 @@ start_link() ->
 init([]) ->
 	Routes = read_routes(filename:join(code:priv_dir(erTest), "tracks.dat")),
 	Cars = lists:map(fun(N) -> generate_car(N, Routes) end, lists:seq(1, ?CARS)),
-	{ok,{{one_for_one,5,10}, Cars}}.
+	{ok,{{one_for_one, 10000, 1}, Cars}}.
 
 read_routes(Path) ->
 	{ok, Routes} = file:consult(Path),
