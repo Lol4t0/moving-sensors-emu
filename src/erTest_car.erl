@@ -29,13 +29,17 @@ start_link(I) ->
 
 init([I]) ->
 	{{number, CarNumber}, {route, CarRoute}, {speed, CarSpeed}} = I, 
-	[CarPosition|_] = CarRoute,
+    Len = length(CarRoute),
+    random:seed(now()),
+    DropCnt = random:uniform(Len) - 1,
+    CurRoute = lists:nthtail(DropCnt, CarRoute),
+	[CarPosition|_] = CurRoute,
 	gproc:add_local_name(CarNumber),
 	{ok, moving, #status{	position = CarPosition, 
 							number = CarNumber, 
 							speed = CarSpeed / 3600, 
 							route = CarRoute, 
-							current_route = CarRoute, 
+							current_route = CurRoute, 
 							res = CarSpeed / 3600, 
 							time = milisecs()}, ?FREQ}.
 

@@ -32,7 +32,7 @@
 	        else{
 		        if (cars[data.id] == undefined){
 		        	cars[data.id] = L.marker([data.lon, data.lat]).
-		        							bindPopup(data.id.toString() + " speed:" + data.speed.toString()).
+                    bindPopup(data.id.toString() + "<br> speed: " + Math.round(data.speed).toString()).
 		        							on('popupopen', showTrack).
 		        							on('popupclose', hideTrack).
 		        							addTo(map);
